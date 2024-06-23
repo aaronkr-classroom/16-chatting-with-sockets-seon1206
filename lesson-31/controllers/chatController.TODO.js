@@ -15,16 +15,48 @@ module.exports = (io) => {
      * Listing 31.11 (p. 460)
      * 최근 메시지 읽어들이기
      */
+    Message.find({})
+      .sort({ createdAt: -1 })
+      .limit(10)
+      .then((messages) => {
+        messages.reverse().forEach((message) => {
+          io.emit("message", message);
+        });
+      })
+      .catch((error) => {
+        console.log(`error: ${error.message}`);
+      });
 
+    socket.on("disconnect",() => {
+      console.log("User disconnected!");
+    });
     /**
      * Listing 31.2 (p. 451)
      */
-
-    /**
-     * Listing 31.5 (p. 453)
-     * 소켓 데이터의 수신
-     */
-
+    socket.on("message", (data) => {
+      /**
+       * Listing 31.5 (p. 453)
+       * 소켓 데이터의 수신
+       */
+      let msgAttr = {
+        content: data.content,
+        userFullName: data.fullName,
+        username: data.username,
+        userId: data.userId,
+      };
+      /**
+       * Listing 31.10 (p. 459)
+       * message 저장
+       */
+      let m = new Message(msgAttr);
+      m.save()
+        .then(() => {
+          io.emit("message", msgAttr);
+        })
+        .catch((error) => {
+          console.log(`error: ${error.message}`);
+        });
+    });
     /**
      * Listing 31.10 (p. 459)
      * message 저장
